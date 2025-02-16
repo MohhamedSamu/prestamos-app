@@ -1,16 +1,13 @@
-import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { Text, View } from 'react-native';
+import { Link } from "expo-router";
 
-import { Welcome } from '@/templates/Welcome';
-
-const Home = () => (
-  <>
-    <Stack.Screen
-      options={{
-        title: 'My home',
-      }}
-    />
-    <Welcome />
-  </>
-);
-
-export default Home;
+export default function App() {
+  return (
+    <View className="flex-1 items-center justify-center bg-white">
+      <Text className='text-3xl'>INDEX!</Text>
+      <StatusBar style='auto' />
+      <Link href="/profile" style={{ color: "blue" }} >Go to profile!</Link>
+    </View>
+  );
+}

@@ -1,10 +1,16 @@
-import { Stack } from 'expo-router';
-import { NativeWindStyleSheet } from 'nativewind';
+import { StyleSheet } from 'react-native'
+import React from 'react'
 
-NativeWindStyleSheet.setOutput({
-  default: 'native',
-});
+import { Stack } from "expo-router";
 
-export default function Layout() {
-  return <Stack />;
+const RootLayout = () => {
+  return (
+    <Stack>
+      <Stack.Screen name='index' options={{headerShown: false}} />
+    </Stack>
+  )
 }
+
+export default RootLayout
+
+const styles = StyleSheet.create({})

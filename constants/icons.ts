@@ -11,8 +11,10 @@ import logout from "../assets/icons/logout.png";
 import eyeHide from "../assets/icons/eye-hide.png";
 import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
+import payment from "../assets/icons/payment.png";
+import clients from "../assets/icons/clients.png";
 
-export default {
+const icons: { [key: string]: any } = {
   play,
   bookmark,
   home,
@@ -26,4 +28,8 @@ export default {
   logout,
   eyeHide,
   eye,
+  payment,
+  clients,
 };
+
+export default icons;

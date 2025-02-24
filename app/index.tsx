@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Redirect, router } from "expo-router";
+import { router } from "expo-router";
 import { View, Text, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -11,9 +11,8 @@ import CustomButton from "../components/CustomButton";
 const Welcome = () => {
   // const { loading, isLogged } = useGlobalContext();
   const loading = false;
-  const isLogged = false;
 
-  if (!loading && isLogged) return <Redirect href="/home" />;
+  // if (!loading && isLogged) return <Redirect href="/home" />;
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -56,7 +55,7 @@ const Welcome = () => {
           </Text>
 
           <CustomButton
-            title="Continua con tu correo"
+            title="Continuar"
             handlePress={() => router.push("/sign-in")}
             containerStyles="w-full mt-7"
           />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { router } from "expo-router";
+import { router, Redirect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
 
@@ -11,6 +11,11 @@ import FormField from "../../components/FormField";
 
 const SignIn = () => {
   // const { setUser, setIsLogged } = useGlobalContext();
+
+  const loading = false;
+  const isLogged = true;
+
+  if (!loading && isLogged) return <Redirect href="/home" />;
 
   const [isSubmitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({

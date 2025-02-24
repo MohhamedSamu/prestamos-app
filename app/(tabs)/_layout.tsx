@@ -89,36 +89,6 @@ const TabsLayout = () => {
           }}
         />
         <Tabs.Screen
-          name="do-payment"
-          options={{
-            title: "Do payment",
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                icon={icons.payment}
-                color={color}
-                name="Nuevo pago"
-                focused={focused}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="create-client"
-          options={{
-            title: "Create Client",
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                icon={icons.plus}
-                color={color}
-                name="Crear cliente"
-                focused={focused}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="profile"
           options={{
             title: "Profile",

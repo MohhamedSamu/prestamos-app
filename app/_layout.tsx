@@ -4,6 +4,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import {useEffect} from 'react';
 import { Stack } from "expo-router";
 
+import { PaperProvider } from "react-native-paper";
+
 SplashScreen.preventAutoHideAsync();
 
 const RootLayout = () => {
@@ -20,24 +22,33 @@ const RootLayout = () => {
     "Poppins-Thin": require("../assets/fonts/Poppins-Thin.ttf"),
   });
 
-
   useEffect(() => {
-    if (fontsLoaded || error) {
+    if (error) throw error;
+
+    if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, error]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   if (!fontsLoaded && !error) {
     return null;
   }
 
   return (
-    <Stack>
-      <Stack.Screen name='index' options={{headerShown: false}} />
-      <Stack.Screen name='(auth)' options={{headerShown: false}} />
-      <Stack.Screen name='(tabs)' options={{headerShown: false}} />
-      {/* <Stack.Screen name='/search/[query]' options={{headerShown: false}} /> */}
-    </Stack>
+    <PaperProvider>
+      <Stack>
+        <Stack.Screen name='index' options={{headerShown: false}} />
+        <Stack.Screen name='(auth)' options={{headerShown: false}} />
+        <Stack.Screen name='(tabs)' options={{headerShown: false}} />
+        <Stack.Screen name='pages/do-payment' options={{title: "Do payment"}} />
+        <Stack.Screen name='pages/create-client' options={{title: "Create Client"}} />
+        {/* <Stack.Screen name='/search/[query]' options={{headerShown: false}} /> */}
+      </Stack>
+    </PaperProvider>
   )
 }
 

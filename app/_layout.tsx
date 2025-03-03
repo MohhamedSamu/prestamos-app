@@ -42,7 +42,6 @@ const RootLayout = () => {
     <PaperProvider>
       <Stack>
         <Stack.Screen name='index' options={{headerShown: false}} />
-        <Stack.Screen name='(auth)' options={{headerShown: false}} />
         <Stack.Screen name='(tabs)' options={{headerShown: false}} />
         <Stack.Screen name='pages/do-payment' options={{headerShown: false, title: "Do payment"}} />
         <Stack.Screen name='pages/create-client' options={{headerShown: false, title: "Create Client"}} />

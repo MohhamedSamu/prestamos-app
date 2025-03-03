@@ -13,6 +13,7 @@ import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
 import payment from "../assets/icons/payment.png";
 import clients from "../assets/icons/clients.png";
+import transacciones from "../assets/icons/transacciones.png";
 
 const icons: { [key: string]: any } = {
   play,
@@ -30,6 +31,7 @@ const icons: { [key: string]: any } = {
   eye,
   payment,
   clients,
+  transacciones,
 };
 
 export default icons;

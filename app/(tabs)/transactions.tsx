@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, View, Image, ScrollView } from "react-native";
-import images from "../../constants/images";
 import FloatingActionButton from "../../components/FloatingActionButton";
+import images from "../../constants/images";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from 'expo-router';
@@ -12,8 +12,7 @@ interface FloatingButtonConfig {
   onPress: () => void;
 }
 
-const Clients = () =>
-{
+const Transactions = () => {
   const router = useRouter();
 
   const floatingButtons: FloatingButtonConfig[] = [
@@ -24,7 +23,7 @@ const Clients = () =>
 
   const data = Array.from({ length: 50 }, (_, index) => ({
     id: index.toString(),
-    title: `Juan Carlos ${index + 1}`,
+    title: `Juan Carlos me pago ${index + 1} en la fecha ...`,
   }));
 
   return (
@@ -50,12 +49,12 @@ const Clients = () =>
           </View>
 
           <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
-            Lista de clientes
+            Lista de transacciones
           </Text>
 
           {/* Mapping through the data and rendering it inside ScrollView */}
           {data.map((item) => (
-            <View key={item.id} className="my-2">
+            <View key={item.id} className="space-y-6">
               <Text className="text-xl font-psemibold text-white">{item.title}</Text>
             </View>
           ))}
@@ -66,5 +65,4 @@ const Clients = () =>
     </SafeAreaView>
   );
 };
-
-export default Clients;
+export default Transactions

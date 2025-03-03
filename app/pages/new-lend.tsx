@@ -28,13 +28,12 @@ const options: Option[] = [
   },
 ];
 
-const CreateClient = () =>
+const NewLend = () =>
 {
+
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     nombre: "",
-    domicilio: "",
-    numero: "",
     tasaInt: 0,
     cantidadPrestamo: 0,
     periodo: "quincena",
@@ -43,9 +42,7 @@ const CreateClient = () =>
   const submit = async () =>
   {
     if (
-      (form.domicilio === "") ||
       (form.nombre === "") ||
-      (form.numero === "") ||
       (form.periodo === "") ||
       !form.cantidadPrestamo
     )
@@ -67,11 +64,9 @@ const CreateClient = () =>
     {
       setForm({
         nombre: "",
-        domicilio: "",
-        numero: "",
-        periodo: "",
         tasaInt: 0,
         cantidadPrestamo: 0,
+        periodo: "quincena",
       });
 
       setUploading(false);
@@ -80,7 +75,7 @@ const CreateClient = () =>
 
   return (
     <SafeAreaView className="bg-primary h-full">
-      <ScrollView contentContainerStyle={{ paddingBottom: 0 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="mt-6 px-4 space-y-6 mb-6 pb-20 pt-5">
           <View className="flex justify-between items-start flex-row mb-6">
             <View>
@@ -101,7 +96,7 @@ const CreateClient = () =>
           </View>
 
           <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
-            Agregar cliente nuevo
+            Nuevo prestamo
           </Text>
 
           <FormField
@@ -112,22 +107,6 @@ const CreateClient = () =>
             otherStyles="mt-10"
           />
 
-          <FormField
-            title="Domicilio"
-            value={form.domicilio}
-            placeholder="Colonia, ciudad, casa..."
-            handleChangeText={(e) => setForm({ ...form, domicilio: e })}
-            otherStyles="mt-7"
-          />
-
-          <FormField
-            title="Numero de telefono"
-            value={form.numero}
-            placeholder="7789 5151 ..."
-            handleChangeText={(e) => setForm({ ...form, numero: e })}
-            otherStyles="mt-7"
-          />
-
           <NumberField
             title="Tasa de interes (%)"
             value={form.tasaInt}
@@ -135,7 +114,6 @@ const CreateClient = () =>
             handleChangeText={(e) => setForm({ ...form, tasaInt: e })}
             otherStyles="mt-7"
           />
-
 
           <Text className="text-xl font-pregular text-gray-100 mb-2 mt-7">
             Periodo de amortizacion
@@ -160,7 +138,7 @@ const CreateClient = () =>
           />
 
           <CustomButton
-            title="Crear cliente"
+            title="Crear prestamo"
             handlePress={submit}
             containerStyles="mt-7"
             isLoading={uploading}
@@ -171,5 +149,4 @@ const CreateClient = () =>
     </SafeAreaView>
   );
 }
-
-export default CreateClient
+export default NewLend

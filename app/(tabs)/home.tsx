@@ -4,6 +4,9 @@ import { Dimensions, Image, Text, View, ScrollView } from "react-native";
 import { StackedBarChart, PieChart } from "react-native-chart-kit";
 import images from "../../constants/images";
 import ComboBox from "../../components/ComboBox";
+import FloatingActionButton from "../../components/FloatingActionButton";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 const data = {
   labels: ["Diciembre", "Enero", "Febrero"],
@@ -33,7 +36,15 @@ const data2 = [
   },
 ];
 
-interface Option {
+interface FloatingButtonConfig
+{
+  icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;  // Added label to provide tooltip text
+  onPress: () => void;
+}
+
+interface Option
+{
   value: string;
   placeholder?: string;
   legend?: string;
@@ -61,23 +72,38 @@ const chartConfig = {
   strokeWidth: 2, // optional, default 3
 };
 
-const Home = () => {
+const Home = () =>
+{
   const [datesToShow, setDatesToShow] = useState<Option>(options[0]);
   const [currentGraph, setCurrentGraph] = useState<JSX.Element | null>(null);
 
-  useEffect(() => {
+  const floatingButtons: FloatingButtonConfig[] = [
+    { icon: "person-add", label: "Agregar cliente", onPress: () => router.push('/pages/create-client') },
+    { icon: "payments", label: "Agregar pago", onPress: () => router.push('/pages/do-payment') },
+    { icon: "rate-review", label: "Nueva deuda", onPress: () => router.push('/pages/new-lend') },
+  ];
+
+  useEffect(() =>
+  {
     setCurrentGraph(renderGraph(datesToShow.value));
   }, [datesToShow]);
 
-  const handleSelect = (selectedOption: Option) => {
+  const handleSelect = (selectedOption: Option) =>
+  {
     setDatesToShow(selectedOption);
   };
-  
 
-  const renderGraph = (value: string) => {
-    if (value === "3meses") {
+  const dataClients = Array.from({ length: 10 }, (_, index) => ({
+    id: index.toString(),
+    title: `Juan Carlos ${index + 1}`,
+  }));
+
+  const renderGraph = (value: string) =>
+  {
+    if (value === "3meses")
+    {
       return (
-        <View className="w-full h-full flex-1 pt-1 pb-8">
+        <View>
           <StackedBarChart
             width={Dimensions.get("window").width - 30}
             height={400}
@@ -87,11 +113,23 @@ const Home = () => {
             chartConfig={chartConfig}
             style={{ left: 10 }}
           />
+
+          <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
+            Lista de clientes que no han pagado
+          </Text>
+
+          {/* Mapping through the data and rendering it inside ScrollView */}
+          {dataClients.map((item) => (
+            <View key={item.id} className="my-2">
+              <Text className="text-xl font-psemibold text-white">{item.title}</Text>
+            </View>
+          ))}
         </View>
       );
-    } else {
+    } else
+    {
       return (
-        <View className="w-full h-full flex-1 pt-1 pb-8">
+        <View>
           <PieChart
             hasLegend={false}
             data={data2}
@@ -110,20 +148,26 @@ const Home = () => {
           <Text className="text-lg font-pregular text-gray-100 mb-3">
             Color azul es capital
           </Text>
+
+          <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
+            Lista de clientes que no han pagado
+          </Text>
+
+          {/* Mapping through the data and rendering it inside ScrollView */}
+          {dataClients.map((item) => (
+            <View key={item.id} className="my-2">
+              <Text className="text-xl font-psemibold text-white">{item.title}</Text>
+            </View>
+          ))}
         </View>
       );
     }
   };
 
   return (
-    <SafeAreaView className="bg-primary">
-      <ScrollView
-        contentContainerStyle={{
-          paddingBottom: 20,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="flex mt-6 px-4 space-y-6">
+    <SafeAreaView className="bg-primary flex-1">
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        <View className="mt-6 px-4 space-y-6 mb-6 pb-20 pt-5 flex-1">
           <View className="flex justify-between items-start flex-row mb-6">
             <View>
               <Text className="font-pmedium text-sm text-gray-100">
@@ -147,7 +191,7 @@ const Home = () => {
             textStyles="text-white"
             isLoading={false}
           />
-          
+
           <Text className="text-lg font-pregular text-gray-100 mb-3">
             Resumen de {datesToShow?.legend}
           </Text>
@@ -155,7 +199,9 @@ const Home = () => {
           {currentGraph}
         </View>
       </ScrollView>
+      <FloatingActionButton buttons={floatingButtons} />
     </SafeAreaView>
+
   );
 };
 

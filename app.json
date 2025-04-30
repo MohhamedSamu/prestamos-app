@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "prestamos-app",
-    "slug": "prestamos-app",
+    "slug": "Prestamos app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,19 +15,31 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.reactnativeboilerplate"
+      "bundleIdentifier": "com.samuelcalde.prestamos"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.reactnativeboilerplate"
+      "package": "com.samuelcalde.prestamos"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["@config-plugins/detox", "expo-router"]
+    "plugins": [
+      "@config-plugins/detox",
+      "expo-router",
+      "./plugins/withAndroidNamespace"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "844280e3-1ce3-4763-9020-2601f29e6d38"
+      }
+    }
   }
 }

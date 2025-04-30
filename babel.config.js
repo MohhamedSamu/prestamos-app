@@ -1,5 +1,6 @@
 module.exports = (api) => {
   api.cache(true);
+  
   return {
     presets: ['babel-preset-expo'],
     plugins: [
@@ -8,11 +9,12 @@ module.exports = (api) => {
         'module-resolver',
         {
           alias: {
-            // This needs to be mirrored in tsconfig.json
             '@': './src',
           },
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
         },
       ],
+      '@babel/plugin-transform-export-namespace-from',
       require.resolve('expo-router/babel'),
     ],
   };

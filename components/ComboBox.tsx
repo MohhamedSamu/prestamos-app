@@ -16,7 +16,7 @@ interface Option {
 interface CustomComboBoxProps {
   options: Option[];
   placeholder?: string;
-  defaultOption?: string;
+  defaultOption: string;  // This is just the value string of the option, not the whole Option object
   onSelect: (selectedOption: Option) => void;
   containerStyles?: string;
   textStyles?: string;
@@ -26,7 +26,7 @@ interface CustomComboBoxProps {
 const CustomComboBox: React.FC<CustomComboBoxProps> = ({
   options,
   placeholder = "Selecciona una opción",
-  defaultOption = "",
+  defaultOption,
   onSelect,
   containerStyles = "",
   textStyles = "",
@@ -35,8 +35,8 @@ const CustomComboBox: React.FC<CustomComboBoxProps> = ({
   const [visible, setVisible] = useState(false);
   
   // Find the default option from options list
-  const defaultSelected = options.find((opt) => opt.value === defaultOption) || { placeholder };
-  const [selected, setSelected] = useState<Option>(defaultSelected);
+  const defaultSelected = options.find((opt) => opt.value === defaultOption) || { value: "", placeholder };
+  const [selected, setSelected] = useState<Option>(defaultSelected as Option);
 
   const openMenu = () => setVisible(true);
   const closeMenu = () => setVisible(false);
@@ -56,7 +56,7 @@ const CustomComboBox: React.FC<CustomComboBoxProps> = ({
           <StyledTouchableOpacity
             onPress={openMenu}
             activeOpacity={0.7}
-            className={`bg-secondary rounded-xl min-h-[50px] flex flex-row justify-between items-center px-4 ${containerStyles} ${
+            className={`bg-secondary rounded-xl min-h-[50px] mb-3 flex flex-row justify-between items-center px-4 ${containerStyles} ${
               isLoading ? "opacity-50" : ""
             }`}
             disabled={isLoading}

@@ -45,6 +45,9 @@ const RootLayout = () => {
         <Stack.Screen name='(tabs)' options={{headerShown: false}} />
         <Stack.Screen name='pages/do-payment' options={{headerShown: false, title: "Do payment"}} />
         <Stack.Screen name='pages/create-client' options={{headerShown: false, title: "Create Client"}} />
+        <Stack.Screen name='pages/client-details' options={{headerShown: false, title: "Client Details"}} />
+        <Stack.Screen name='pages/lend-details' options={{headerShown: false, title: "Lend Details"}} />
+        <Stack.Screen name='pages/payment-details' options={{headerShown: false, title: "Payment Details"}} />
         <Stack.Screen name='pages/new-lend' options={{headerShown: false, title: "Nuevo prestamo"}} />
         {/* <Stack.Screen name='/search/[query]' options={{headerShown: false}} /> */}
       </Stack>

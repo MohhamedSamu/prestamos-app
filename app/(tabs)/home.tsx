@@ -1,40 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Dimensions, Image, Text, View, ScrollView } from "react-native";
-import { StackedBarChart, PieChart } from "react-native-chart-kit";
+import { Dimensions, Image, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { PieChart } from "react-native-chart-kit";
 import images from "../../constants/images";
 import ComboBox from "../../components/ComboBox";
 import FloatingActionButton from "../../components/FloatingActionButton";
 import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-
-const data = {
-  labels: ["Diciembre", "Enero", "Febrero"],
-  legend: ["Capital", "Interes"],
-  data: [
-    [3000, 300],
-    [2000, 200],
-    [1500, 150],
-  ],
-  barColors: ["#BF5050", "#6A86C1"],
-};
-
-const data2 = [
-  {
-    name: "Capital",
-    quantity: 2000,
-    color: "rgba(131, 167, 234, 1)",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15,
-  },
-  {
-    name: "Interes",
-    quantity: 200,
-    color: "#F00",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15,
-  },
-];
+import { router, useFocusEffect } from "expo-router";
+import { DashboardService, Period, ClientSummary } from "../../lib/DashboardService";
+import { formatDateToSpanish } from "../../lib/utils/dateFormat";
 
 interface FloatingButtonConfig
 {
@@ -43,25 +17,51 @@ interface FloatingButtonConfig
   onPress: () => void;
 }
 
-interface Option
-{
-  value: string;
-  placeholder?: string;
+interface Option {
+  value: Period;
+  placeholder: string;
   legend?: string;
 }
 
-const options: Option[] = [
+const chartOptions: Option[] = [
   {
-    value: "mes",
-    placeholder: "Ultimo mes",
+    value: "mes_actual",
+    placeholder: "Mes actual",
     legend: "este mes",
   },
   {
-    value: "3meses",
-    placeholder: "Ultimos 3 meses",
-    legend: "los ultimos 3",
+    value: "30dias",
+    placeholder: "Últimos 30 días",
+    legend: "los últimos 30 días",
   },
-];
+  {
+    value: "3meses",
+    placeholder: "Últimos 3 meses",
+    legend: "los últimos 3 meses",
+  },
+  {
+    value: "6meses",
+    placeholder: "Últimos 6 meses",
+    legend: "los últimos 6 meses",
+  },
+  {
+    value: "ano_actual",
+    placeholder: "Año actual",
+    legend: "este año",
+  },
+  {
+    value: "ano_anterior",
+    placeholder: "Año anterior",
+    legend: "el año anterior",
+  }
+] as const;
+
+// Define a guaranteed non-nullable default option
+const defaultOption = {
+  value: "mes_actual" as const,
+  placeholder: "Mes actual",
+  legend: "este mes",
+};
 
 const chartConfig = {
   backgroundGradientFrom: "#1E2923",
@@ -74,8 +74,12 @@ const chartConfig = {
 
 const Home = () =>
 {
-  const [datesToShow, setDatesToShow] = useState<Option>(options[0]);
+  const [datesToShow, setDatesToShow] = useState<Option>(defaultOption);
   const [currentGraph, setCurrentGraph] = useState<JSX.Element | null>(null);
+  const [clientSummaries, setClientSummaries] = useState<ClientSummary[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const dashboardService = new DashboardService();
 
   const floatingButtons: FloatingButtonConfig[] = [
     { icon: "person-add", label: "Agregar cliente", onPress: () => router.push('/pages/create-client') },
@@ -83,56 +87,52 @@ const Home = () =>
     { icon: "rate-review", label: "Nueva deuda", onPress: () => router.push('/pages/new-lend') },
   ];
 
-  useEffect(() =>
-  {
-    setCurrentGraph(renderGraph(datesToShow.value));
-  }, [datesToShow]);
+  useFocusEffect(
+    useCallback(() => {
+      if (datesToShow) {
+        loadDashboardData();
+      }
+    }, [datesToShow])
+  );
 
-  const handleSelect = (selectedOption: Option) =>
-  {
-    setDatesToShow(selectedOption);
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await dashboardService.getChartData(datesToShow.value);
+      setClientSummaries(data.clientSummaries);
+      setCurrentGraph(renderGraph(data));
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const dataClients = Array.from({ length: 10 }, (_, index) => ({
-    id: index.toString(),
-    title: `Juan Carlos ${index + 1}`,
-  }));
-
-  const renderGraph = (value: string) =>
-  {
-    if (value === "3meses")
-    {
-      return (
-        <View>
-          <StackedBarChart
-            width={Dimensions.get("window").width - 30}
-            height={400}
-            data={data}
-            hideLegend={true}
-            withVerticalLabels={false}
-            chartConfig={chartConfig}
-            style={{ left: 10 }}
-          />
-
-          <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
-            Lista de clientes que no han pagado
-          </Text>
-
-          {/* Mapping through the data and rendering it inside ScrollView */}
-          {dataClients.map((item) => (
-            <View key={item.id} className="my-2">
-              <Text className="text-xl font-psemibold text-white">{item.title}</Text>
-            </View>
-          ))}
-        </View>
-      );
-    } else
-    {
+  const renderGraph = (data: any) => {
+    if (data.pieChartData && data.pieChartData.length > 0) {
+      // Safe-check the data for pie chart
+      const chartData = data.pieChartData.map((item: any) => ({
+        name: item.name || "",
+        quantity: typeof item.quantity === 'number' ? item.quantity : 0,
+        color: item.color || "#cccccc",
+        legendFontColor: item.legendFontColor || "#7F7F7F",
+        legendFontSize: item.legendFontSize || 15,
+      }));
+      
+      // Calculate totals for display
+      const totalCapital = chartData[0]?.quantity || 0;
+      const totalInterest = chartData[1]?.quantity || 0;
+      const total = totalCapital + totalInterest;
+      
+      // Format percentages
+      const capitalPercent = total > 0 ? Math.round((totalCapital / total) * 100) : 0;
+      const interestPercent = total > 0 ? Math.round((totalInterest / total) * 100) : 0;
+      
       return (
         <View>
           <PieChart
             hasLegend={false}
-            data={data2}
+            data={chartData}
             width={Dimensions.get("window").width}
             height={400}
             chartConfig={chartConfig}
@@ -142,26 +142,62 @@ const Home = () =>
             center={[95, 0]}
             absolute
           />
-          <Text className="text-lg font-pregular text-gray-100 mb-3">
-            Color rojo es interes
-          </Text>
-          <Text className="text-lg font-pregular text-gray-100 mb-3">
-            Color azul es capital
-          </Text>
-
-          <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
-            Lista de clientes que no han pagado
-          </Text>
-
-          {/* Mapping through the data and rendering it inside ScrollView */}
-          {dataClients.map((item) => (
-            <View key={item.id} className="my-2">
-              <Text className="text-xl font-psemibold text-white">{item.title}</Text>
+          
+          <View className="flex-row justify-between items-center mt-4 mb-6">
+            <View className="flex-row items-center">
+              <View className="w-4 h-4 mr-2 bg-[rgba(131,167,234,1)]" />
+              <Text className="text-white">Capital: ${totalCapital.toFixed(2)} ({capitalPercent}%)</Text>
             </View>
-          ))}
+            <View className="flex-row items-center">
+              <View className="w-4 h-4 mr-2 bg-[#F00]" />
+              <Text className="text-white">Interés: ${totalInterest.toFixed(2)} ({interestPercent}%)</Text>
+            </View>
+          </View>
+
+          <Text className="text-2xl text-center font-pregular text-gray-100 mb-5">
+            Resumen de pagos recibidos
+          </Text>
+
+          {renderClientSummaries()}
+        </View>
+      );
+    } else {
+      return (
+        <View className="items-center justify-center py-10">
+          <Text className="text-white text-lg">No hay datos disponibles para este período.</Text>
         </View>
       );
     }
+  };
+
+  const renderClientSummaries = () => {
+    if (clientSummaries.length === 0) {
+      return (
+        <View className="items-center justify-center py-5">
+          <Text className="text-white text-lg">No hay pagos de clientes en este período.</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View>
+        {clientSummaries.map((client) => (
+          <View key={client.id} className="bg-blue-800 rounded-xl p-4 mb-3">
+            <Text className="text-xl font-psemibold text-white">{client.name}</Text>
+            <View className="flex-row justify-between mt-2">
+              <Text className="text-gray-300">Capital: ${client.capitalPaid.toFixed(2)}</Text>
+              <Text className="text-gray-300">Interés: ${client.interestPaid.toFixed(2)}</Text>
+            </View>
+            <View className="flex-row justify-between mt-1">
+              <Text className="text-white font-psemibold">Total: ${client.totalPaid.toFixed(2)}</Text>
+              <Text className="text-gray-300 text-xs mt-1">
+                Último pago: {formatDateToSpanish(client.lastPaymentDate)}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
   };
 
   return (
@@ -177,31 +213,39 @@ const Home = () =>
                 A tu control
               </Text>
             </View>
-            <View className="mt-1.5">
+            <View className="mt-1.5 flex-row items-center gap-3">
               <Image source={images.logoSmall} className="w-9 h-10" resizeMode="contain" />
             </View>
           </View>
 
           <ComboBox
-            options={options}
+            options={chartOptions}
             placeholder="Selecciona un periodo de tiempo"
             defaultOption={datesToShow.value}
-            onSelect={handleSelect}
+            onSelect={(option) => {
+              setDatesToShow(option as Option);
+            }}
             containerStyles="w-full mb-5 bg-blue-500"
             textStyles="text-white"
-            isLoading={false}
+            isLoading={isLoading}
           />
 
           <Text className="text-lg font-pregular text-gray-100 mb-3">
-            Resumen de {datesToShow?.legend}
+            Resumen de {datesToShow.legend || ""}
           </Text>
 
-          {currentGraph}
+          {isLoading ? (
+            <View className="items-center justify-center h-96">
+              <ActivityIndicator size="large" color="#6A86C1" />
+              <Text className="text-white mt-4">Cargando datos...</Text>
+            </View>
+          ) : (
+            currentGraph
+          )}
         </View>
       </ScrollView>
       <FloatingActionButton buttons={floatingButtons} />
     </SafeAreaView>
-
   );
 };
 

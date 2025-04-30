@@ -10,35 +10,42 @@ import FormField from "../../components/FormField";
 import CustomButton from "../../components/CustomButton";
 import ComboBox from "../../components/ComboBox";
 
-interface Option
-{
+import { ClientsService } from "../../lib/ClientsService";
+import { NewClient } from "../../lib/types"; 
+
+interface Option {
   value: string;
-  placeholder?: string;
+  placeholder: string;
   legend?: string;
 }
 
 const options: Option[] = [
   {
-    value: "quincena",
+    value: "quincenal",
     placeholder: "Cada quincena",
   },
   {
     value: "mensual",
     placeholder: "Cada mes",
   },
+  {
+    value: "catorcenal",
+    placeholder: "Cada 14 días",
+  }
 ];
 
 const CreateClient = () =>
 {
   const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<NewClient>({
     nombre: "",
     domicilio: "",
     numero: "",
-    tasaInt: 0,
+    tasa_interes: 0,
     cantidadPrestamo: 0,
-    periodo: "quincena",
+    periodo: "quincenal",
   });
+  const clientService = new ClientsService();
 
   const submit = async () =>
   {
@@ -56,9 +63,9 @@ const CreateClient = () =>
     setUploading(true);
     try
     {
-      //save it
+      const data = await clientService.insertClientWithLending(form);
 
-      Alert.alert("Success", "Post uploaded successfully");
+      Alert.alert("Exito", "Cliente creado correctamente");
       router.push("/home");
     } catch (error: any)
     {
@@ -69,8 +76,8 @@ const CreateClient = () =>
         nombre: "",
         domicilio: "",
         numero: "",
-        periodo: "",
-        tasaInt: 0,
+        periodo: "quincenal",
+        tasa_interes: 0,
         cantidadPrestamo: 0,
       });
 
@@ -130,9 +137,9 @@ const CreateClient = () =>
 
           <NumberField
             title="Tasa de interes (%)"
-            value={form.tasaInt}
+            value={form.tasa_interes}
             placeholder="15%..."
-            handleChangeText={(e) => setForm({ ...form, tasaInt: e })}
+            handleChangeText={(e) => setForm({ ...form, tasa_interes: e })}
             otherStyles="mt-7"
           />
 

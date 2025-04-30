@@ -9,6 +9,10 @@ import NumberField from "../../components/NumberField";
 import FormField from "../../components/FormField";
 import CustomButton from "../../components/CustomButton";
 import ComboBox from "../../components/ComboBox";
+import ClientsAutocompleteInput from "../../components/ClientsAutocompleteInput";
+import { ClientDocument } from "lib/types";
+import { LendingService } from "../../lib/LendingService";
+
 
 interface Option
 {
@@ -19,31 +23,37 @@ interface Option
 
 const options: Option[] = [
   {
-    value: "quincena",
+    value: "quincenal",
     placeholder: "Cada quincena",
   },
   {
     value: "mensual",
     placeholder: "Cada mes",
   },
+  {
+    value: "catorcenal",
+    placeholder: "Cada 14 días",
+  }
 ];
 
 const NewLend = () =>
 {
 
   const [uploading, setUploading] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClientDocument | null>(null);
+
   const [form, setForm] = useState({
     nombre: "",
+    idCliente: "",
     tasaInt: 0,
     cantidadPrestamo: 0,
-    periodo: "quincena",
   });
 
   const submit = async () =>
   {
     if (
       (form.nombre === "") ||
-      (form.periodo === "") ||
+      (form.idCliente === "") ||
       !form.cantidadPrestamo
     )
     {
@@ -51,27 +61,60 @@ const NewLend = () =>
     }
 
     setUploading(true);
+    const lendingService = new LendingService();
+
     try
     {
-      //save it
+      const now = new Date();
+      const startOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        1, // hour
+        1, // minute
+        0  // seconds
+      );
 
-      Alert.alert("Success", "Post uploaded successfully");
+      const newLending = {
+        cliente_id: form.idCliente,
+        tasa_interes: form.tasaInt,
+        cantidad: form.cantidadPrestamo,
+        fecha_inicio: startOfDay.toISOString(),
+        fecha_fin: null,
+      };
+
+
+      const result = await lendingService.insertLending(newLending);
+
+      console.log("result", result);
+
+
+      if (!result)
+      {
+        throw new Error("Failed to create lending");
+      }
+
+      Alert.alert("Success", "Préstamo creado exitosamente");
       router.push("/home");
-    } catch (error: any)
+    }
+    catch (error: any)
     {
-      Alert.alert("Error", error.message);
-    } finally
+      Alert.alert("Error", error.message || "Hubo un error al crear el préstamo");
+    }
+    finally
     {
       setForm({
         nombre: "",
+        idCliente: "",
         tasaInt: 0,
         cantidadPrestamo: 0,
-        periodo: "quincena",
       });
 
+      setSelectedClient(null);
       setUploading(false);
     }
   };
+
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -99,11 +142,12 @@ const NewLend = () =>
             Nuevo prestamo
           </Text>
 
-          <FormField
-            title="Nombre del cliente"
-            value={form.nombre}
-            placeholder="Roman Riquelme..."
-            handleChangeText={(e) => setForm({ ...form, nombre: e })}
+          <ClientsAutocompleteInput
+            onSelect={(client) =>
+            {
+              setSelectedClient(client);
+              setForm({ ...form, nombre: client.nombre, idCliente: client.$id }); // optional
+            }}
             otherStyles="mt-10"
           />
 
@@ -113,20 +157,6 @@ const NewLend = () =>
             placeholder="15%..."
             handleChangeText={(e) => setForm({ ...form, tasaInt: e })}
             otherStyles="mt-7"
-          />
-
-          <Text className="text-xl font-pregular text-gray-100 mb-2 mt-7">
-            Periodo de amortizacion
-          </Text>
-
-          <ComboBox
-            options={options}
-            placeholder="Selecciona un periodo de tiempo"
-            defaultOption={form.periodo}
-            onSelect={(e) => setForm({ ...form, periodo: e.value })}
-            containerStyles="w-full bg-blue-500"
-            textStyles="text-white"
-            isLoading={false}
           />
 
           <NumberField

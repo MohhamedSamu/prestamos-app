@@ -1,34 +1,57 @@
-import React from "react";
-import { Text, View, Image, ScrollView } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { Text, View, Image, ScrollView, ActivityIndicator, TouchableOpacity } from "react-native";
 import images from "../../constants/images";
 import FloatingActionButton from "../../components/FloatingActionButton";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
+import { ClientsService } from "../../lib/ClientsService";
+import { ClientDocument } from "../../lib/types";
+import { useFocusEffect } from "expo-router";
 
 interface FloatingButtonConfig {
   icon: keyof typeof MaterialIcons.glyphMap;
-  label: string;  // Added label to provide tooltip text
+  label: string;
   onPress: () => void;
 }
 
-const Clients = () =>
-{
+const Clients = () => {
+  const [clients, setClients] = useState<ClientDocument[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
+  const clientService = new ClientsService();
 
   const floatingButtons: FloatingButtonConfig[] = [
-    { icon: "person-add", label:"Agregar cliente", onPress: () => router.push('/pages/create-client') },
-    { icon: "payments", label:"Agregar pago", onPress: () => router.push('/pages/do-payment') },
-    { icon: "rate-review", label:"Nueva deuda", onPress: () => router.push('/pages/new-lend') },
+    { icon: "person-add", label: "Agregar cliente", onPress: () => router.push("/pages/create-client") },
+    { icon: "payments", label: "Agregar pago", onPress: () => router.push("/pages/do-payment") },
+    { icon: "rate-review", label: "Nueva deuda", onPress: () => router.push("/pages/new-lend") },
   ];
 
-  const data = Array.from({ length: 50 }, (_, index) => ({
-    id: index.toString(),
-    title: `Juan Carlos ${index + 1}`,
-  }));
+  const loadClients = async () => {
+    try {
+      setLoading(true); // Start loading
+      const data = await clientService.getAllClients();
+
+      console.log("data", data);
+      
+
+      setClients(data || []);
+    } catch (error) {
+      console.error("Error loading clients:", error);
+    } finally {
+      setLoading(false); // Stop loading
+    }
+  };
+
+  // Reload clients when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadClients();
+    }, [])
+  );
 
   return (
-    <SafeAreaView className="bg-primary">
+    <SafeAreaView className="bg-primary flex-1">
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="mt-6 px-4 space-y-6 mb-6 pb-20 pt-5">
           <View className="flex justify-between items-start flex-row mb-6">
@@ -53,12 +76,33 @@ const Clients = () =>
             Lista de clientes
           </Text>
 
-          {/* Mapping through the data and rendering it inside ScrollView */}
-          {data.map((item) => (
-            <View key={item.id} className="my-2">
-              <Text className="text-xl font-psemibold text-white">{item.title}</Text>
-            </View>
-          ))}
+          {loading ? (
+            <ActivityIndicator size="large" color="#ffffff" className="mt-10" />
+          ) : clients.length === 0 ? (
+            <Text className="text-lg text-center font-pregular text-gray-400">
+              No hay clientes aún.
+            </Text>
+          ) : (
+            clients.map((client) => (
+              <View key={client.$id} className="my-2">
+                <Text className="text-xl font-psemibold text-white">{client.nombre}</Text>
+              </View>
+            ))
+
+            &&
+
+            clients.map((client) => (
+              <TouchableOpacity
+                key={client.$id}
+                className="my-2"
+                onPress={() => router.push(`/pages/client-details?clientId=${client.$id}`)}
+              >
+                <Text className="text-xl font-psemibold text-white">{client.nombre}</Text>
+              </TouchableOpacity>
+            ))
+          )}
+
+
 
         </View>
       </ScrollView>

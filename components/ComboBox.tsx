@@ -52,6 +52,7 @@ const CustomComboBox: React.FC<CustomComboBoxProps> = ({
       <Menu
         visible={visible}
         onDismiss={closeMenu}
+        contentStyle={{ backgroundColor: '#213158' }}  // Dark blue background for dropdown menu
         anchor={
           <StyledTouchableOpacity
             onPress={openMenu}
@@ -74,7 +75,12 @@ const CustomComboBox: React.FC<CustomComboBoxProps> = ({
         }
       >
         {options.map((item: Option, index) => (
-          <Menu.Item key={index} onPress={() => handleSelect(item)} title={item.placeholder} />
+          <Menu.Item 
+            key={index} 
+            onPress={() => handleSelect(item)} 
+            title={item.placeholder}
+            titleStyle={{ color: 'white', fontWeight: '500' }} // White text for menu items
+          />
         ))}
       </Menu>
     </StyledView>

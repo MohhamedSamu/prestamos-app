@@ -13,6 +13,7 @@ import { Client, ClientDocument } from "../../lib/types";
 
 import { LendingService } from "../../lib/LendingService";
 import { LendingDocument } from "../../lib/types";
+import { formatDateToSpanish } from "../../lib/utils/dateFormat";
 
 
 const options = [
@@ -31,7 +32,8 @@ const ClientDetails = () =>
   const [clientObj, setClientObj] = useState<ClientDocument | null>(null);
   const clientService = new ClientsService();
 
-  const [lendings, setLendings] = useState<LendingDocument[]>([]);
+  const [activeLendings, setActiveLendings] = useState<LendingDocument[]>([]);
+  const [completedLendings, setCompletedLendings] = useState<LendingDocument[]>([]);
   const lendingService = new LendingService();
 
   useEffect(() =>
@@ -62,7 +64,22 @@ const ClientDetails = () =>
     try
     {
       const data = await lendingService.getLendingsByClientId(clientId as string);
-      if (data) setLendings(data);
+      if (data) {
+        // Separate active and completed lendings
+        const active = data.filter(lending => !lending.fecha_fin);
+        const completed = data.filter(lending => lending.fecha_fin);
+        
+        // Sort by dates (most recent first for both lists)
+        active.sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
+        completed.sort((a, b) => {
+          const dateA = new Date(b.fecha_fin || b.fecha_inicio);
+          const dateB = new Date(a.fecha_fin || a.fecha_inicio);
+          return dateA.getTime() - dateB.getTime();
+        });
+        
+        setActiveLendings(active);
+        setCompletedLendings(completed);
+      }
     } catch (error)
     {
       console.error("Error loading lendings:", error);
@@ -132,33 +149,79 @@ const ClientDetails = () =>
 
               <CustomButton title="Actualizar Cliente" handlePress={submit} isLoading={updating} />
 
-              <Text className="text-2xl text-center font-pregular text-gray-100 mb-3 mt-10">
-                Préstamos del cliente
-              </Text>
-
-              {lendings.length === 0 ? (
-                <Text className="text-lg text-center font-pregular text-gray-400">
-                  No hay préstamos aún.
-                </Text>
+              {activeLendings.length === 0 && completedLendings.length === 0 ? (
+                <View className="mt-10">
+                  <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
+                    Préstamos del cliente
+                  </Text>
+                  <Text className="text-lg text-center font-pregular text-gray-400">
+                    No hay préstamos aún.
+                  </Text>
+                </View>
               ) : (
-                lendings.map((lending) => (
-                  <TouchableOpacity
-                    key={lending.$id}
-                    className="my-2 p-3 bg-blue-700 rounded-xl"
-                    onPress={() => {
-                      console.log("Client period when navigating:", clientObj?.periodo);
-                      router.push({
-                        pathname: "/pages/lend-details",
-                        params: {
-                          lendingId: lending.$id,
-                          clientPeriod: clientObj?.periodo,
-                        },
-                      });
-                    }}
-                  >
-                    <Text className="text-white font-psemibold text-lg">💰 {lending.cantidad}</Text>
-                  </TouchableOpacity>
-                ))
+                <>
+                  {activeLendings.length > 0 && (
+                    <View className="mt-10">
+                      <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
+                        Préstamos activos
+                      </Text>
+                      {activeLendings.map((lending) => (
+                        <TouchableOpacity
+                          key={lending.$id}
+                          className="my-2 p-3 bg-blue-700 rounded-xl"
+                          onPress={() => {
+                            router.push({
+                              pathname: "/pages/lend-details",
+                              params: {
+                                lendingId: lending.$id,
+                                clientPeriod: clientObj?.periodo,
+                              },
+                            });
+                          }}
+                        >
+                          <Text className="text-white font-psemibold text-lg">💰 ${lending.cantidad.toFixed(2)}</Text>
+                          <View className="flex-row justify-between mt-1">
+                            <Text className="text-white text-sm">Interés: {lending.tasa_interes}%</Text>
+                            <Text className="text-white text-sm">
+                              Inicio: {formatDateToSpanish(lending.fecha_inicio)}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  {completedLendings.length > 0 && (
+                    <View className="mt-10">
+                      <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
+                        Préstamos completados
+                      </Text>
+                      {completedLendings.map((lending) => (
+                        <TouchableOpacity
+                          key={lending.$id}
+                          className="my-2 p-3 bg-blue-500 rounded-xl"
+                          onPress={() => {
+                            router.push({
+                              pathname: "/pages/lend-details",
+                              params: {
+                                lendingId: lending.$id,
+                                clientPeriod: clientObj?.periodo,
+                              },
+                            });
+                          }}
+                        >
+                          <Text className="text-white font-psemibold text-lg">💰 ${lending.cantidad.toFixed(2)}</Text>
+                          <View className="flex-row justify-between mt-1">
+                            <Text className="text-white text-sm">Interés: {lending.tasa_interes}%</Text>
+                            <Text className="text-white text-sm">
+                              Completado: {formatDateToSpanish(lending.fecha_fin || '')}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </>
           )}

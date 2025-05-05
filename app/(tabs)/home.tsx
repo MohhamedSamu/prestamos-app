@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Dimensions, Image, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { PieChart } from "react-native-chart-kit";
@@ -75,9 +75,12 @@ const chartConfig = {
 const Home = () =>
 {
   const [datesToShow, setDatesToShow] = useState<Option>(defaultOption);
-  const [currentGraph, setCurrentGraph] = useState<JSX.Element | null>(null);
-  const [clientSummaries, setClientSummaries] = useState<ClientSummary[]>([]);
+  const [dashboardData, setDashboardData] = useState<{ 
+    pieChartData: any[],
+    clientSummaries: ClientSummary[]
+  }>({ pieChartData: [], clientSummaries: [] });
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [hasData, setHasData] = useState<boolean>(false);
 
   const dashboardService = new DashboardService();
 
@@ -99,79 +102,77 @@ const Home = () =>
     setIsLoading(true);
     try {
       const data = await dashboardService.getChartData(datesToShow.value);
-      setClientSummaries(data.clientSummaries);
-      setCurrentGraph(renderGraph(data));
+      setDashboardData(data);
+      
+      // Check if there's any meaningful data to display
+      const totalAmount = data.pieChartData.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      setHasData(totalAmount > 0);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
+      setHasData(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderGraph = (data: any) => {
-    if (data.pieChartData && data.pieChartData.length > 0) {
-      // Safe-check the data for pie chart
-      const chartData = data.pieChartData.map((item: any) => ({
-        name: item.name || "",
-        quantity: typeof item.quantity === 'number' ? item.quantity : 0,
-        color: item.color || "#cccccc",
-        legendFontColor: item.legendFontColor || "#7F7F7F",
-        legendFontSize: item.legendFontSize || 15,
-      }));
-      
-      // Calculate totals for display
-      const totalCapital = chartData[0]?.quantity || 0;
-      const totalInterest = chartData[1]?.quantity || 0;
-      const total = totalCapital + totalInterest;
-      
-      // Format percentages
-      const capitalPercent = total > 0 ? Math.round((totalCapital / total) * 100) : 0;
-      const interestPercent = total > 0 ? Math.round((totalInterest / total) * 100) : 0;
-      
-      return (
-        <View>
-          <PieChart
-            hasLegend={false}
-            data={chartData}
-            width={Dimensions.get("window").width}
-            height={400}
-            chartConfig={chartConfig}
-            accessor={"quantity"}
-            backgroundColor={"transparent"}
-            paddingLeft={"0"}
-            center={[95, 0]}
-            absolute
-          />
-          
-          <View className="flex-row justify-between items-center mt-4 mb-6">
-            <View className="flex-row items-center">
-              <View className="w-4 h-4 mr-2 bg-[rgba(131,167,234,1)]" />
-              <Text className="text-white">Capital: ${totalCapital.toFixed(2)} ({capitalPercent}%)</Text>
-            </View>
-            <View className="flex-row items-center">
-              <View className="w-4 h-4 mr-2 bg-[#F00]" />
-              <Text className="text-white">Interés: ${totalInterest.toFixed(2)} ({interestPercent}%)</Text>
-            </View>
-          </View>
-
-          <Text className="text-2xl text-center font-pregular text-gray-100 mb-5">
-            Resumen de pagos recibidos
-          </Text>
-
-          {renderClientSummaries()}
-        </View>
-      );
-    } else {
+  const renderGraph = () => {
+    if (!hasData) {
       return (
         <View className="items-center justify-center py-10">
           <Text className="text-white text-lg">No hay datos disponibles para este período.</Text>
         </View>
       );
     }
+    
+    // Safe-check the data for pie chart
+    const chartData = dashboardData.pieChartData.map(item => ({
+      name: item.name || "",
+      quantity: typeof item.quantity === 'number' ? item.quantity : 0,
+      color: item.color || "#cccccc",
+      legendFontColor: item.legendFontColor || "#7F7F7F",
+      legendFontSize: item.legendFontSize || 15,
+    }));
+    
+    // Calculate totals for display
+    const totalCapital = chartData[0]?.quantity || 0;
+    const totalInterest = chartData[1]?.quantity || 0;
+    const total = totalCapital + totalInterest;
+    
+    // Format percentages
+    const capitalPercent = total > 0 ? Math.round((totalCapital / total) * 100) : 0;
+    const interestPercent = total > 0 ? Math.round((totalInterest / total) * 100) : 0;
+    
+    return (
+      <View>
+        <PieChart
+          hasLegend={false}
+          data={chartData}
+          width={Dimensions.get("window").width}
+          height={400}
+          chartConfig={chartConfig}
+          accessor={"quantity"}
+          backgroundColor={"transparent"}
+          paddingLeft={"0"}
+          center={[95, 0]}
+          absolute
+        />
+        
+        <View className="flex-row justify-between items-center mt-4 mb-6">
+          <View className="flex-row items-center">
+            <View className="w-4 h-4 mr-2 bg-[rgba(131,167,234,1)]" />
+            <Text className="text-white">Capital: ${totalCapital.toFixed(2)} ({capitalPercent}%)</Text>
+          </View>
+          <View className="flex-row items-center">
+            <View className="w-4 h-4 mr-2 bg-[#F00]" />
+            <Text className="text-white">Interés: ${totalInterest.toFixed(2)} ({interestPercent}%)</Text>
+          </View>
+        </View>
+      </View>
+    );
   };
 
   const renderClientSummaries = () => {
-    if (clientSummaries.length === 0) {
+    if (dashboardData.clientSummaries.length === 0 || !hasData) {
       return (
         <View className="items-center justify-center py-5">
           <Text className="text-white text-lg">No hay pagos de clientes en este período.</Text>
@@ -181,7 +182,7 @@ const Home = () =>
 
     return (
       <View>
-        {clientSummaries.map((client) => (
+        {dashboardData.clientSummaries.map((client) => (
           <View key={client.id} className="bg-blue-800 rounded-xl p-4 mb-3">
             <Text className="text-xl font-psemibold text-white">{client.name}</Text>
             <View className="flex-row justify-between mt-2">
@@ -240,7 +241,15 @@ const Home = () =>
               <Text className="text-white mt-4">Cargando datos...</Text>
             </View>
           ) : (
-            currentGraph
+            <>
+              {renderGraph()}
+              
+              <Text className="text-2xl text-center font-pregular text-gray-100 my-5">
+                Resumen de pagos recibidos
+              </Text>
+              
+              {renderClientSummaries()}
+            </>
           )}
         </View>
       </ScrollView>

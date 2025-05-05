@@ -19,6 +19,7 @@ const DoPayment = () => {
   const [selectedLending, setSelectedLending] = useState<LendingDocument | null>(null);
   const [interestToPay, setInterestToPay] = useState(0);
   const [capitalToPay, setCapitalToPay] = useState(0);
+  const [totalPayment, setTotalPayment] = useState(0);
   const [remainingCapital, setRemainingCapital] = useState(0);
   const [isFullPayment, setIsFullPayment] = useState(false);
   const [showLoanInfo, setShowLoanInfo] = useState(false);
@@ -35,13 +36,33 @@ const DoPayment = () => {
 
   useEffect(() => {
     if (isFullPayment && remainingCapital > 0) {
+      // For full payment, set the total payment to include all remaining capital plus interest
+      const fullPayment = remainingCapital + interestToPay;
+      setTotalPayment(fullPayment);
       setCapitalToPay(remainingCapital);
     }
-  }, [isFullPayment, remainingCapital]);
+  }, [isFullPayment, remainingCapital, interestToPay]);
+
+  useEffect(() => {
+    // Calculate capital to pay when total payment changes
+    if (!isFullPayment && totalPayment > 0) {
+      const calculatedCapital = Math.max(0, totalPayment - interestToPay);
+      
+      // If calculated capital exceeds remaining capital, adjust it
+      if (calculatedCapital > remainingCapital) {
+        setCapitalToPay(remainingCapital);
+        // Adjust total payment to match the max possible (remaining capital + interest)
+        setTotalPayment(remainingCapital + interestToPay);
+      } else {
+        setCapitalToPay(calculatedCapital);
+      }
+    }
+  }, [totalPayment, interestToPay, isFullPayment, remainingCapital]);
 
   const resetPaymentInfo = () => {
     setInterestToPay(0);
     setCapitalToPay(0);
+    setTotalPayment(0);
     setRemainingCapital(0);
     setShowLoanInfo(false);
   };
@@ -61,6 +82,10 @@ const DoPayment = () => {
       setInterestToPay(loanInfo.interest);
       setRemainingCapital(loanInfo.remainingCapital);
       setShowLoanInfo(true);
+      
+      // Initialize total payment with interest amount
+      setTotalPayment(loanInfo.interest);
+      setCapitalToPay(0);
     } catch (error) {
       console.error("Error loading loan info:", error);
       Alert.alert("Error", "No se pudo cargar la información del préstamo");
@@ -78,18 +103,27 @@ const DoPayment = () => {
   const handleLendingSelect = (lending: LendingDocument) => {
     setSelectedLending(lending);
   };
+  
+  const handleTotalPaymentChange = (value: number) => {
+    setTotalPayment(value);
+  };
 
   const submit = async () => {
     if (!selectedClient || !selectedLending) {
       return Alert.alert("Error", "Selecciona un cliente y un préstamo");
     }
 
-    if (interestToPay <= 0 && capitalToPay <= 0) {
+    if (totalPayment <= 0) {
       return Alert.alert("Error", "Ingresa una cantidad para pagar");
     }
 
     if (capitalToPay > remainingCapital) {
       return Alert.alert("Error", "El capital a pagar no puede ser mayor que el restante");
+    }
+
+    // Ensure interest is paid first
+    if (totalPayment < interestToPay) {
+      return Alert.alert("Error", "El pago debe cubrir al menos el interés acumulado ($" + interestToPay.toFixed(2) + ")");
     }
 
     setUploading(true);
@@ -178,9 +212,9 @@ const DoPayment = () => {
             <>
               <View className="space-y-4 bg-blue-800 p-4 rounded-2xl mt-4">
                 <Text className="text-white text-lg font-psemibold">Detalles de pago</Text>
-                <Text className="text-white">Capital pendiente: ${remainingCapital}</Text>
-                <Text className="text-white">Intereses acumulados: ${interestToPay}</Text>
-                <Text className="text-white">Total a pagar: ${interestToPay + remainingCapital}</Text>
+                <Text className="text-white">Capital pendiente: ${remainingCapital.toFixed(2)}</Text>
+                <Text className="text-white">Intereses acumulados: ${interestToPay.toFixed(2)}</Text>
+                <Text className="text-white">Total a pagar: ${(interestToPay + remainingCapital).toFixed(2)}</Text>
               </View>
 
               <View className="flex-row items-center justify-between mt-6">
@@ -195,27 +229,30 @@ const DoPayment = () => {
 
               {!isFullPayment && (
                 <NumberField
-                  title="Cantidad de capital a pagar"
-                  value={capitalToPay}
+                  title="Cantidad total a pagar"
+                  value={totalPayment}
                   placeholder="200..."
-                  handleChangeText={(value) => setCapitalToPay(value)}
+                  handleChangeText={(value) => handleTotalPaymentChange(value)}
                   otherStyles="mt-4"
                 />
               )}
 
-              <View className="flex-row gap-2 mt-6">
-                <Text className="text-xl font-pregular text-gray-100">Interés a pagar:</Text>
-                <Text className="text-xl font-pregular text-red-500">${interestToPay}</Text>
-              </View>
+              <View className="space-y-4 bg-blue-900 p-4 rounded-2xl mt-6">
+                <Text className="text-white text-lg font-psemibold">Distribución del pago</Text>
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-300">Interés a pagar:</Text>
+                  <Text className="text-red-500 font-psemibold">${interestToPay.toFixed(2)}</Text>
+                </View>
 
-              <View className="flex-row gap-2">
-                <Text className="text-xl font-pregular text-gray-100">Capital a pagar:</Text>
-                <Text className="text-xl font-pregular text-green-500">${capitalToPay}</Text>
-              </View>
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-300">Capital a pagar:</Text>
+                  <Text className="text-green-500 font-psemibold">${capitalToPay.toFixed(2)}</Text>
+                </View>
 
-              <View className="flex-row gap-2">
-                <Text className="text-xl font-pregular text-gray-100">Total:</Text>
-                <Text className="text-xl font-pregular text-white">${interestToPay + capitalToPay}</Text>
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-300">Total a pagar:</Text>
+                  <Text className="text-white font-psemibold">${totalPayment.toFixed(2)}</Text>
+                </View>
               </View>
 
               <CustomButton

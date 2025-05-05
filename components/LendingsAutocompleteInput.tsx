@@ -99,6 +99,9 @@ const LendingsAutocompleteInput: React.FC<LendingsAutocompleteInputProps> = ({
         placeholderStyle={styles.placeholderStyle}
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
+        itemTextStyle={styles.itemTextStyle}
+        itemContainerStyle={styles.itemContainerStyle}
+        activeColor="#213158"
         iconStyle={styles.iconStyle}
         data={data}
         search
@@ -136,7 +139,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   dropdownContainer: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#213158", // Dark blue background for dropdown
     borderRadius: 12,
     color: "#FFFFFF",
   },
@@ -153,7 +156,14 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 16,
     color: "#FFFFFF",
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#1E293B", // Darker blue for search box
+  },
+  itemTextStyle: {
+    color: "#FFFFFF", // White text for dropdown items
+    fontSize: 16,
+  },
+  itemContainerStyle: {
+    backgroundColor: "#213158", // Match container background
   },
   iconStyle: {
     width: 20,

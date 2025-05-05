@@ -96,6 +96,21 @@ const TabsLayout = () => {
             ),
           }}
         />
+        <Tabs.Screen
+          name="pending-dashboard"
+          options={{
+            title: "Pending Dashboard",
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon
+                icon={icons.bookmark}
+                color={color}
+                name="Pendientes"
+                focused={focused}
+              />
+            ),
+          }}
+        />
       </Tabs>
 
       {/* <Loader isLoading={loading} /> */}

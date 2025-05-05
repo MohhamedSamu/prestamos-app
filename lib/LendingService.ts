@@ -63,6 +63,21 @@ export class LendingService {
     }
   }
 
+  async getAllActiveLendings(): Promise<LendingDocument[] | null> {
+    try {
+      // Get all lendings
+      const lendings = await this.appwrite.getAll<LendingDocument>(this.collection);
+      
+      if (!lendings) return null;
+      
+      // Filter out loans that have a fecha_fin (which means they're paid off)
+      return lendings.filter(lending => !lending.fecha_fin);
+    } catch (error) {
+      console.error("Error getting all active lendings:", error);
+      return null;
+    }
+  }
+
   calculateInterestUntilToday({
     capital,
     tasa_interes,

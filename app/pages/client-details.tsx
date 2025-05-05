@@ -14,6 +14,7 @@ import { Client, ClientDocument } from "../../lib/types";
 import { LendingService } from "../../lib/LendingService";
 import { LendingDocument } from "../../lib/types";
 import { formatDateToSpanish } from "../../lib/utils/dateFormat";
+import { PaymentService } from "../../lib/PaymentService";
 
 
 const options = [
@@ -34,14 +35,25 @@ const ClientDetails = () =>
 
   const [activeLendings, setActiveLendings] = useState<LendingDocument[]>([]);
   const [completedLendings, setCompletedLendings] = useState<LendingDocument[]>([]);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [summaryData, setSummaryData] = useState({
+    totalPendingInterest: 0,
+    totalRemainingCapital: 0,
+    lastPaymentDate: ""
+  });
+  
   const lendingService = new LendingService();
+  const paymentService = new PaymentService();
 
-  useEffect(() =>
-  {
+  useEffect(() => {
     loadClient();
-    loadLendings();
   }, [clientId]);
 
+  useEffect(() => {
+    if (clientObj) {
+      loadLendings();
+    }
+  }, [clientObj]);
 
   const loadClient = async () =>
   {
@@ -59,10 +71,8 @@ const ClientDetails = () =>
     }
   };
 
-  const loadLendings = async () =>
-  {
-    try
-    {
+  const loadLendings = async () => {
+    try {
       const data = await lendingService.getLendingsByClientId(clientId as string);
       if (data) {
         // Separate active and completed lendings
@@ -79,10 +89,64 @@ const ClientDetails = () =>
         
         setActiveLendings(active);
         setCompletedLendings(completed);
+        
+        // Calculate summary separately with a timeout to ensure all data is loaded
+        if (active.length > 0 && clientObj && clientObj.periodo) {
+          setTimeout(() => {
+            calculateClientSummary(active, clientObj.periodo);
+          }, 500); // Small delay to ensure everything is ready
+        }
       }
-    } catch (error)
-    {
+    } catch (error) {
       console.error("Error loading lendings:", error);
+    }
+  };
+  
+  const calculateClientSummary = async (activeLoans: LendingDocument[], period: string) => {
+    console.log("Calculating summary for", activeLoans.length, "loans with period", period);
+    setIsLoadingSummary(true);
+    try {
+      let totalInterest = 0;
+      let totalCapital = 0;
+      let lastPayment = null;
+      
+      for (const lending of activeLoans) {
+        try {
+          console.log(`Calculating for lending ${lending.$id} with amount ${lending.cantidad}`);
+          // Calculate interest and remaining capital
+          const loanInfo = await paymentService.calculateInterestForLending(
+            lending.$id,
+            period as "mensual" | "quincenal" | "catorcenal"
+          );
+          
+          console.log(`Loan info: interest=${loanInfo.interest}, capital=${loanInfo.remainingCapital}`);
+          
+          totalInterest += loanInfo.interest;
+          totalCapital += loanInfo.remainingCapital;
+          
+          // Find most recent payment date across all loans
+          if (loanInfo.lastPaymentDate) {
+            const paymentDate = new Date(loanInfo.lastPaymentDate);
+            if (!lastPayment || paymentDate > lastPayment) {
+              lastPayment = paymentDate;
+            }
+          }
+        } catch (error) {
+          console.error(`Error calculating for lending ${lending.$id}:`, error);
+        }
+      }
+      
+      console.log(`Setting summary data: interest=${totalInterest}, capital=${totalCapital}`);
+      
+      setSummaryData({
+        totalPendingInterest: totalInterest,
+        totalRemainingCapital: totalCapital,
+        lastPaymentDate: lastPayment ? lastPayment.toISOString() : ""
+      });
+    } catch (error) {
+      console.error("Error calculating summary:", error);
+    } finally {
+      setIsLoadingSummary(false);
     }
   };
 
@@ -148,6 +212,46 @@ const ClientDetails = () =>
               <ComboBox options={options} defaultOption={form.periodo} onSelect={(e) => setForm({ ...form, periodo: e.value })} />
 
               <CustomButton title="Actualizar Cliente" handlePress={submit} isLoading={updating} />
+              
+              {/* Client Financial Summary Section */}
+              {activeLendings.length > 0 && (
+                <View className="mt-10">
+                  <Text className="text-2xl text-center font-pregular text-gray-100 mb-3">
+                    Resumen financiero
+                  </Text>
+                  
+                  {isLoadingSummary ? (
+                    <View className="p-4 bg-blue-800 rounded-xl">
+                      <Text className="text-gray-300 text-center">Calculando datos...</Text>
+                    </View>
+                  ) : (
+                    <View className="p-4 bg-blue-800 rounded-xl">
+                      <View className="flex-row justify-between mb-2">
+                        <Text className="text-gray-300">Interés pendiente:</Text>
+                        <Text className="text-red-500 font-psemibold">
+                          ${summaryData.totalPendingInterest.toFixed(2)}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row justify-between mb-2">
+                        <Text className="text-gray-300">Capital restante:</Text>
+                        <Text className="text-white font-psemibold">
+                          ${summaryData.totalRemainingCapital.toFixed(2)}
+                        </Text>
+                      </View>
+                      
+                      {summaryData.lastPaymentDate && (
+                        <View className="flex-row justify-between">
+                          <Text className="text-gray-300">Último pago:</Text>
+                          <Text className="text-gray-300">
+                            {formatDateToSpanish(summaryData.lastPaymentDate)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
 
               {activeLendings.length === 0 && completedLendings.length === 0 ? (
                 <View className="mt-10">
